@@ -1,0 +1,29 @@
+# By default, ssh-proxy listens on port 222 (any IP)
+# The address here is passed to Go's net.Listen (https://pkg.go.dev/net#Listen)
+# Examples:
+# - ":22" = any IP, port 22
+# - "192.168.2.1:22" = specific IP, port 22
+listenAddress: ":222"
+
+# By default, the system's SSH host keys are used.
+# This can be set to any pattern, according to Go's filepath.Match syntax
+# (https://pkg.go.dev/path/filepath#Match)
+hostKeyPattern: "/etc/ssh/ssh_host_*_key"
+
+# The users section is a map of username to user config objects, here we have a config for the
+# "example" user only.
+users:
+  example:
+    # Users can only authenticate with keys listed here.
+    publicKeys:
+    - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA3Cq6HadD+LbYPwXlKaEL8T12bxTgj/nxI7OTAuZRzz example@example-pc"
+    # Setting this to true allows forwarding of any traffic.
+    forwardAll: false
+    # Alternatively, a specific whitelist can be set.
+    # For example, could allow: to SSH on the hosts 10.1.2.3 and 10.3.2.1
+    forwardWhitelist:
+    - "1.1.1.1" # 1.1.1.1 only, any port
+    - "10.2.0.0:22" # 10.2.0.0, port 22, only
+    - "1.0.0.1:1024-65535" # 1.0.0.1 only, unprivileged ports only
+    - "10.1.0.0/16:22" # any 10.1.x.x IP, port 22 only (the left hand side is CIDR notation)
+    - "*:21" # any IP, port 21 only 
