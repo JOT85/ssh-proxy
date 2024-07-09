@@ -1,7 +1,7 @@
 # ssh-proxy
 
 ssh-proxy is a simple SSH server, which only forwards TCP/IP connections, designed for use on a
-bastion host.
+bastion host, but applicable elsewhere.
 
 ## Why?
 
@@ -16,17 +16,18 @@ It's common to setup an SSH bastion host using OpenSSH. This usually involves:
 
 ssh-proxy is designed to simplify things greatly, by:
 
-1. *Only* doing TCP/IP forwarding, nothing else.
-2. Only *public key authentication* is allowed.
-3. It *doesn't use system users*, making a bastion server with many users much easier to manage.
+1. **Only doing TCP/IP forwarding**, nothing else (this allows for ssh proxying using `-J`, see the
+   examples below).
+2. **Only public key authentication** is allowed.
+3. It **doesn't use system users**, making a bastion server with many users much easier to manage.
    Your proxy users aren't your system users!
-4. Fine-grained host and port limiting is possible, and all within the *single config file*.
+4. **Fine-grained host and port limiting** is possible, and all within the **single config file**.
 
 ## How?
 
 It's written in Go, using [`golang.org/x/crypto/ssh`](https://pkg.go.dev/golang.org/x/crypto/ssh),
-in *<500 lines of code*, making it outstandingly easy to audit (assuming you trust `crypto/ssh`, and
-even that is pretty nice to read!).
+in **<500 lines of code**, making it outstandingly easy to audit (assuming you trust `crypto/ssh`,
+and even that is pretty nice to read!).
 
 ### Create a configuration file
 
@@ -70,7 +71,7 @@ users:
 ### Running the Container Image
 
 A container image is available at [jot85/ssh-proxy on Docker
-Hub](https://hub.docker.com/repository/docker/jot85/ssh-proxy/)
+Hub](https://hub.docker.com/r/jot85/ssh-proxy)
 
 ```bash
 # The container needs host keys to be able to accept connections
@@ -112,12 +113,55 @@ systemctl enable ssh-proxy
 
 Coming soon...
 
+## Now what?
+
+Use your proxy server as you would any other SSH server for forwarding ports!
+
+### Proxy jump to another SSH server
+
+Suppose your proxy/bastion server is available at `bastion.example.com`, and you want to access the
+internal server 10.0.0.1, via SSH. You can run:
+
+```bash
+ssh -J bastion.example.com 10.0.0.1
+```
+
+This will proxy your connection to 10.0.0.1 through the ssh-proxy server.
+
+#### Don't repeat the `-J` flag
+
+Instead of typing `-J bastion.example.com` all the time, you can add an entry to your SSH config
+(`~/.ssh/config`):
+
+```
+Host 10.0.0.1
+   ProxyJump bastion.example.com
+```
+
+You can also use `*` to match any host, or to indicate subnets. You can also use `Match` to create
+more powerful conditions. See [`man ssh_config`](https://man.archlinux.org/man/ssh_config.5) for
+more details.
+
+### Expose a server, or database, port on your local system
+
+You can use `ssh` to bind ports locally, which will forward TCP traffic to a remote system:
+
+```bash
+ssh -L 8000:10.0.0.1:80 -L 8443:10.0.0.1:443 bastion.example.com
+```
+
+This will forward traffic from port 8000 on your local system to 10.0.0.1:80 through the ssh-proxy
+server. Likewise, it will forward local traffic to port 8443 to 10.0.0.1:443, via the proxy.
+
 ## What could happen, in the future?
 
 - Verifying keys signed by a certificate authority sounds like a very reasonable feature, but I've
   not currently got a use-case for it, so haven't implemented it yet. Feel free to contribute this
   feature if you need it.
 - A better config format than YAML might be considered.
+- I can imagine use cases where you'd want to be able to include multiple config files, but again,
+  that's not my current use case, and I don't think it's worth the added complexity right now.
+- Hot reloading of the config file, so the server doesn't have to restart when it's updated.
 
 ## Testing
 
