@@ -252,7 +252,7 @@ func (server *Server) Handle(conn net.Conn) {
 
 			server.Logger.Printf("accepted forward request from %v (%v:%v) -> %v\n", sshConn.User(), data.OriginatorIP, data.OriginatorPort, addr)
 
-			func() {
+			go func() {
 				// Try dialing the target
 				tcpSide, err := net.DialTCP("tcp", nil, &addr)
 				if err != nil {
